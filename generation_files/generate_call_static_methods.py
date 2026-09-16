@@ -49,7 +49,7 @@ def collect_typed_arrays(classes):
 def generate_typed_array_name(name):
     if (name == "typedarray::Array"):
         pass
-    return name.split("::")[1] + "TypedArray"
+    return "Array"
 
 def generate_newline(str_):
     return str_ + "\n"
@@ -61,9 +61,7 @@ def generate_includes(classes):
     res += '#include "py4godot/cppclasses/generated4_core.h"'
     res = generate_newline(res)
     for cls in classes:
-        if "typedarray" in cls.lower():
-            res += f'#include "py4godot/cppclasses/typedarrays/{cls}.h"\n'
-        elif cls in builtin_classes:
+        if cls in builtin_classes:
             continue
         else:
             res += f'#include "py4godot/cppclasses/{cls}/{cls}.h"'
@@ -140,4 +138,4 @@ if __name__ == "__main__":
         arrays = sorted(arrays, key = lambda array: array["name"])
 
         classes.remove(None)
-        write_if_different("py4godot/cppclasses/static_methods.h", generate_static_methods([array["name"] for array in arrays] + list(classes)))
+        write_if_different("py4godot/cppclasses/static_methods.h", generate_static_methods(list(classes)))

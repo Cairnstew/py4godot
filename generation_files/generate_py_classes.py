@@ -256,6 +256,38 @@ def generate_constructors(class_):
 
         res += f"{INDENT*2}_class._ptr = constructor({classes_dict[class_['name']]}, {constructor['index']}, tuple([{generate_constructor_call_args(class_, constructor)}]))"
         res = generate_newline(res)
+        if class_["name"] == "Array":
+            res += f"{INDENT*2}if _class.type_:"
+            res = generate_newline(res)
+            cls_str = ""
+            for cls in builtin_classes - {"Nil"}:
+                cls_str += f"{cls}:{get_variant_type_val(cls)},"
+            res = generate_newline(res)
+            res += f"{INDENT*3}l={{{cls_str}}}"
+            res = generate_newline(res)
+            res = generate_newline(res)
+            res += f"{INDENT * 3}type_name = StringName.new2('')"
+            res = generate_newline(res)
+            res += f"{INDENT * 3}script = None"
+            res = generate_newline(res)
+            res += f"{INDENT * 3}type_ = _class.type_"
+            res = generate_newline(res)
+            res += f"{INDENT * 3}if type_ not in l:"
+            res = generate_newline(res)
+            res += f"{INDENT * 4}type_name = StringName.new2(_class.type_.__name__)"
+            res = generate_newline(res)
+            res += f"{INDENT*4}variant_type = {get_variant_type_val('Object')}"
+            res = generate_newline(res)
+            res += f"{INDENT*4}script = type_._script"
+            res = generate_newline(res)
+            res += f"{INDENT * 3}else:"
+            res = generate_newline(res)
+            res += f"{INDENT * 4}variant_type= l[_class.type_.__name__]"
+            res = generate_newline(res)
+            res += f"{INDENT* 3}_class._ptr.call_with_return({method_ids['normal_methods'][class_['name']]['set_typed']},tuple([variant_type, type_name._ptr, script]))"
+            res = generate_newline(res)
+            res += f"{INDENT*3}_class.type_ = None"
+            res = generate_newline(res)
         res += f"{INDENT * 2}return _class"
         res = generate_newline(res)
 
@@ -293,7 +325,7 @@ def generate_return_value(classname, method_):
             result += f"{INDENT * 2}{ret_val.name} = None"
         elif "typedarray" in ret_val.type:
             result += (f"{INDENT * 2}_ret = "
-                       f"py4godot_{generate_typed_array_name(ret_val.type).lower()}.{generate_typed_array_name(ret_val.type)}.construct_without_init()")
+                       f"Array[{generate_typed_array_name(ret_val.type)}].construct_without_init()")
         elif "enum::" in ret_val.type:
             result += f"{INDENT * 2}{ret_val.name}:int"
         else:
@@ -399,6 +431,53 @@ def is_singleton(class_name):
 def generate_method_bind_name(class_name, method_name):
     return f"method_bind__{class_name}_{method_name}"
 
+def get_variant_type_val(class_name):
+    DICT = {
+        "Nil": 0,
+        #  atomic types
+        "bool": 1,
+        "int": 2,
+        "float": 3,
+        "string": 4,
+        # math types
+        "vector2": 5,
+        "vector2i": 6,
+        "rect2": 7,
+        "rect2i": 8,
+        "vector3": 9,
+        "vector3i": 10,
+        "transform2d": 11,
+        "vector4": 12,
+        "vector4i": 13,
+        "plane": 14,
+        "quaternion": 15,
+        "aabb": 16,
+        "basis": 17,
+        "transform3d": 18,
+        "projection": 19,
+        # misc types
+        "color": 20,
+        "stringname": 21,
+        "nodepath": 22,
+        "rid": 23,
+        "object": 24,
+        "callable": 25,
+        "signal": 26,
+        "dictionary": 27,
+        "array": 28,
+        # typed arrays
+        "packedbytearray": 29,
+        "packedint32array": 30,
+        "packedint64array": 31,
+        "packedfloat32array": 32,
+        "packedfloat64array": 33,
+        "packedstringarray": 34,
+        "packedvector2array": 35,
+        "packedvector3array": 36,
+        "packedcolorarray": 37,
+        "packedvector4array": 38,
+    }
+    return DICT[class_name.lower()]
 
 def get_variant_type(class_name):
     DICT = {
@@ -500,13 +579,13 @@ def generate_default_args(mMethod):
             continue
         if arg["type"] in {"float", "int", "Nil", "bool"}:
             continue
-        if not arg["type"].startswith("enum::") and not arg["type"].startswith("typedarray::") and not arg[
+        if not arg["type"].startswith("enum::") and not arg[
             "type"].startswith("bitfield::"):
             type_ = unvariant(untypearray_or_dictionary(unbitfield_type(arg['type'])))
             if arg["type"] in builtin_classes:
                 res += f"{INDENT * 2}if {pythonize_name(arg['name'])} is None:"
                 res = generate_newline(res)
-                res += f"{INDENT * 3}{pythonize_name(arg['name'])} = {arg['type']}.new0()"
+                res += f"{INDENT * 3}{pythonize_name(arg['name'])} = {untypearray_or_dictionary(arg['type'])}.new0()"
             elif arg["type"] == "Variant":
                 pass # We actually don't want to set anything here. This is later handled by C++
             else:
@@ -1321,7 +1400,7 @@ def unnull_arg(default_value, arg_type):
 def generate_default_arg(class_, arg, arg_type):
     set_to_iterate = builtin_classes.union(classes) - {"int", "float", "bool", "Nil"}
     if "default_value" in arg:
-        if arg_type in set_to_iterate or "TypedArray" in arg_type:
+        if arg_type in set_to_iterate or "typedarray" in arg_type.lower():
             if arg_type == "String":
                 return "= ''"
             return "= None"
@@ -1381,7 +1460,7 @@ def generate_args(class_, method_with_args):
             if class_["name"] in typed_arrays_names:
                 type_ = unstring(unvariant_type_array(untypearray_or_dictionary(unbitfield_type(arg['type'])), class_["name"]))
             arg_type_for_default_arg = type_
-            if arg["type"] in ("NodePath", "StringName"):
+            if arg["type"] in ("NodePath", "StringName") or "typedarray" in arg["type"].lower():
                 arg_type_for_default_arg = arg["type"]
             result += f"{pythonize_name(arg['name'])}:'{import_type(type_, class_['name'])}' {generate_default_arg(class_, arg, arg_type_for_default_arg)}  , "
         else:
@@ -1620,26 +1699,8 @@ def generate_classes(classes, filename, is_core=False, is_typed_array=False):
     if classes[0]["name"] != "Object":
         res += "import py4godot.classes as classes"
         res = generate_newline(res)
-    if is_typed_array:
-        res = generate_newline(res)
 
-        typedarray_type = classes[0]["name"].replace('TypedArray', '')
-        if typedarray_type not in builtin_classes:
-            res += f"if typing.TYPE_CHECKING:"
-            res = generate_newline(res)
-            res += f"{INDENT}import py4godot.classes.{typedarray_type} as py4godot_{typedarray_type.lower()}"
-            res = generate_newline(res)
-
-        res += f"from py4godot.classes.core import *"
-        res = generate_newline(res)
-        classes_to_import = get_classes_to_import(classes)
-        for cls in classes_to_import:
-            if cls in [class_["name"] for class_ in classes]:
-                continue
-            res += f"import py4godot.classes.{cls} as py4godot_{cls.lower()} "
-            res = generate_newline(res)
-
-    elif not is_core:
+    if not is_core:
         if not "Object" in [cls["name"] for cls in classes]:
             res += "import py4godot.classes as classes"
             res = generate_newline(res)
@@ -1658,12 +1719,16 @@ def generate_classes(classes, filename, is_core=False, is_typed_array=False):
                 continue
             if cls in [cls["name"] for cls in obj["classes"]] and cls in [class_["inherits"] for class_ in classes]:
                 continue
+            if cls in builtin_classes:
+                continue
             res += f"{INDENT}import py4godot.classes.{cls} as py4godot_{cls.lower()} "
             res = generate_newline(res)
         for cls in classes_to_import:
             if cls in [class_["name"] for class_ in classes]:
                 continue
             if cls in [cls["name"] for cls in obj["classes"]] and cls not in [class_["inherits"] for class_ in classes]:
+                continue
+            if cls in builtin_classes:
                 continue
             res += f"import py4godot.classes.{cls} as py4godot_{cls.lower()} "
             res = generate_newline(res)
@@ -1685,6 +1750,12 @@ def generate_classes(classes, filename, is_core=False, is_typed_array=False):
         res += f"class {class_['name']}({get_base_class(class_)}):"
         res = generate_newline(res)
         res += generate_class_docstring()
+        res = generate_newline(res)
+        if class_["name"] == "Array":
+            res += f"{INDENT}type_=None"
+            res = generate_newline(res)
+        if class_["name"] == "Object":
+            res += f"{INDENT}_script=None"
         res = generate_newline(res)
         res += generate_type_hints_constants_for_class(class_)
         res = generate_newline(res)
@@ -1845,6 +1916,9 @@ def generate_array_get_item(class_):
         res += f"{INDENT * 2}pyobject = self._ptr.call_with_return({method_ids['normal_methods'][class_['name']]['__getitem__']}, (index,))"
     else:
         if not ("Packed" in class_["name"] and "Array" in class_["name"]) or "Typed" in class_["name"]:
+            res += f"{INDENT * 2}pyobject = self._ptr.call_with_return({method_ids['normal_methods'][class_['name']]['__getitem__']}, (index,))"
+            res = generate_newline(res)
+            res += f"{INDENT * 2}return pyobject"
             return res
         class_to_builtin = {"PackedVector2Array":"Vector2", "PackedVector3Array":"Vector3", "PackedVector2iArray":"Vector2i",
                        "PackedVector3iArray":"Vector3i", "PackedStringArray":"String", "PackedColorArray":"Color",
@@ -1919,6 +1993,14 @@ def generate_next_array(class_):
 
     return res
 
+def generate_getitem_class(class_):
+    res = ""
+    res+= f"{INDENT}def __class_getitem__(cls, item):"
+    res = generate_newline(res)
+    res += f"{INDENT * 2}cls.type_ = item"
+    res = generate_newline(res)
+    res += f"{INDENT*2}return cls"
+    return res
 
 def generate_special_methods_array(class_):
     res = ""
@@ -1929,6 +2011,8 @@ def generate_special_methods_array(class_):
     res += generate_iter_array(class_)
     res = generate_newline(res)
     res += generate_next_array(class_)
+    res = generate_newline(res)
+    res += generate_getitem_class(class_)
     res = generate_newline(res)
     return res
 
@@ -2172,7 +2256,7 @@ def collect_typed_arrays(classes):
 
 
 def generate_typed_array_name(name):
-    return (name.split("::")[1] + "TypedArray").replace("24/17:", "").replace("27/0:TypedArray", "DictionaryTypedArray")
+    return (name.split("::")[1]).replace("24/17:", "").replace("27/0:TypedArray", "Array[Dictionary]")
 
 def generate_variant_checks(method, classname):
     res = ""
@@ -2241,7 +2325,4 @@ if __name__ == "__main__":
 
         is_core = True
         arrays = sorted(arrays, key= lambda key:key["name"])
-        for array in arrays:
-            generate_classes([array], f"py4godot/classes/{array['name']}.py", is_core=False, is_typed_array=True)
-
         generate_classes(obj["builtin_classes"], f"py4godot/classes/core.py", is_core=True)

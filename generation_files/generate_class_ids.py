@@ -73,7 +73,7 @@ if __name__ == "__main__":
             arrays.append(my_array_cls)
         arrays = sorted(arrays, key = lambda array: array["name"])
 
-        all_classes = arrays + obj['classes'] + obj["builtin_classes"]
+        all_classes = obj['classes'] + obj["builtin_classes"]
         id_counter = 0
         for cls in all_classes:
             if cls["name"] not in IGNORED_CLASSES:

@@ -963,6 +963,16 @@ def generate_array_methods(class_):
             res += f"{INDENT * 1}static std::shared_ptr<{class_['name']}> py_from_ptr(int64_t* ptr, long long size);"
     return res
 
+
+def generate_special_methods_normal_array():
+    res = ""
+    res += f"{INDENT*1}void set_typed(GDExtensionVariantType type, std::shared_ptr<StringName> class_name, PyObject* script_owner);"
+    res = generate_newline(res)
+    res += f"{INDENT*1}void py_set_typed(GDExtensionVariantType type, std::shared_ptr<StringName> class_name, PyObject* script);"
+    res = generate_newline(res)
+    return res
+
+
 def generate_special_methods(class_):
     res = ""
     if class_["name"] == "Dictionary":
@@ -970,6 +980,9 @@ def generate_special_methods(class_):
 
     if "array" in class_["name"].lower():
         res += generate_special_methods_array(class_)
+
+    if class_["name"] == "Array":
+        res += generate_special_methods_normal_array()
 
     if class_["name"] in {"Vector3", "Vector2", "String", "Color"}:
         res += generate_copy_methods(class_["name"])
@@ -1038,7 +1051,7 @@ def collect_typed_arrays(classes):
 
 
 def generate_typed_array_name(name):
-    return name.split("::")[1] + "TypedArray"
+    return "Array"
 
 def collect_class_structs(configuration):
     res = set()
@@ -1080,11 +1093,6 @@ if __name__ == "__main__":
             if (not os.path.exists(f"py4godot/cppclasses/{class_['name']}/")):
                 os.mkdir(f"py4godot/cppclasses/{class_['name']}/")
             generate_classes([class_], f"py4godot/cppclasses/{class_['name']}/{class_['name']}.h")
-        if not os.path.exists(f"py4godot/cppclasses/typedarrays/"):
-            os.mkdir(f"py4godot/cppclasses/typedarrays/")
-        for array in arrays:
-            generate_classes([array], f"py4godot/cppclasses/typedarrays/{array['name']}.h", is_core=True)
-
         generate_classes(obj["builtin_classes"], f"py4godot/cppclasses/generated4_core.h", is_core=True)
 
         class_defs = (
