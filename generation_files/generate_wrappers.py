@@ -47,7 +47,7 @@ def collect_typed_arrays(classes):
 def generate_typed_array_name(name):
     if (name == "typedarray::Array"):
         pass
-    return name.split("::")[1] + "TypedArray"
+    return "Array"
 
 def generate_newline(str_):
     return str_ + "\n"
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             arrays.append(my_array_cls)
         arrays = sorted(arrays, key = lambda array: array["name"])
 
-        all_classes = arrays + obj['classes'] + obj["builtin_classes"]
+        all_classes = obj['classes'] + obj["builtin_classes"]
         res += f"cdef api object extract_ptr_from_py_object(object other)"
         res = generate_newline(res)
         for cls in all_classes:
@@ -196,7 +196,7 @@ if __name__ == "__main__":
                 res = generate_newline(res)
         write_if_different("py4godot/wrappers/wrappers.pyx", res)
 
-        all_classes = arrays + obj['classes'] + obj["builtin_classes"]
+        all_classes = obj['classes'] + obj["builtin_classes"]
         res = "#pragma once\n#include \"Python.h\"\n#include \"py4godot/cppclasses/class_defs.h\"\n"
         res = generate_newline(res)
         res += """#if !defined(GDN_EXPORT)
@@ -225,10 +225,7 @@ if __name__ == "__main__":
         res = '#include "py4godot/wrappers/wrappers_wrapper.h"'
         res = generate_newline(res)
         for cls in all_classes:
-            if cls["name"] not in IGNORED_CLASSES and "typedarray" in cls["name"].lower():
-                res += f'#include "py4godot/cppclasses/typedarrays/{cls["name"]}.h"'
-                res = generate_newline(res)
-            elif cls["name"] in classes - set(builtin_classes):
+            if cls["name"] in classes - set(builtin_classes):
                 res += f'#include "py4godot/cppclasses/{cls["name"]}/{cls["name"]}.h"'
                 res = generate_newline(res)
 

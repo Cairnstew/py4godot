@@ -738,9 +738,7 @@ def generate_classes(classes, filename, is_core=False):
 
 
 def generate_pxd_bridge_class(classname):
-    if "TypedArray" in classname:
-        res = f'cdef extern from "py4godot/cppclasses/typedarrays/{classname}.h" namespace "godot":'
-    elif classname in builtin_classes:
+    if classname in builtin_classes:
         res = f'cdef extern from "py4godot/cppclasses/generated4_core.h" namespace "godot":'
     else:
         res = f'cdef extern from "py4godot/cppclasses/{classname}/{classname}.h" namespace "godot":'
@@ -832,7 +830,7 @@ if __name__ == "__main__":
         res = ""
         res += generate_wrapper()
         res = generate_newline(res)
-        for cls in arrays + obj["builtin_classes"] + obj["classes"]:
+        for cls in obj["builtin_classes"] + obj["classes"]:
             if cls["name"] not in IGNORED_CLASSES:
                 res += generate_pxd_bridge_class(cls["name"])
                 res = generate_newline(res)

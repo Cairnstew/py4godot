@@ -1051,7 +1051,7 @@ def collect_typed_arrays(classes):
 
 
 def generate_typed_array_name(name):
-    return name.split("::")[1] + "TypedArray"
+    return "Array"
 
 def collect_class_structs(configuration):
     res = set()
@@ -1093,11 +1093,6 @@ if __name__ == "__main__":
             if (not os.path.exists(f"py4godot/cppclasses/{class_['name']}/")):
                 os.mkdir(f"py4godot/cppclasses/{class_['name']}/")
             generate_classes([class_], f"py4godot/cppclasses/{class_['name']}/{class_['name']}.h")
-        if not os.path.exists(f"py4godot/cppclasses/typedarrays/"):
-            os.mkdir(f"py4godot/cppclasses/typedarrays/")
-        for array in arrays:
-            generate_classes([array], f"py4godot/cppclasses/typedarrays/{array['name']}.h", is_core=True)
-
         generate_classes(obj["builtin_classes"], f"py4godot/cppclasses/generated4_core.h", is_core=True)
 
         class_defs = (

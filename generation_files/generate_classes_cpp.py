@@ -101,8 +101,8 @@ def generate_import(class_, is_core):
 #include <memory>
 '''
         for cls in get_classes_to_import([class_]):
-            if "typedarray" in cls.lower():
-                res += f'#include "py4godot/cppclasses/typedarrays/{cls}.h"'
+            if "typedarray" in cls.lower() or cls.lower() == "array":
+                continue
             else:
                 res += f'#include "py4godot/cppclasses/{cls}/{cls}.h"'
             res = generate_newline(res)
@@ -114,8 +114,6 @@ def generate_import(class_, is_core):
              f'#include "py4godot/cppclasses/generated4_core.h"\n'\
              f'#include "py4godot/wrappers/wrappers_wrapper.h"\n'\
              f'# include "py4godot/wrappers/type_checking_wrapper.h"\n'
-    if "typedarray" in class_["name"].lower():
-        result += f'#include "py4godot/cppclasses/typedarrays/{class_["name"]}.h"\n'
     f'#include <memory>"\n'
     return result
 
@@ -2179,21 +2177,11 @@ def generate_operators_for_class(class_name):
     return res
 
 
-def generate_typed_array_import(classes):
-    res = ""
-    for cls in classes:
-        if cls["name"] in typed_arrays_names:
-            cls_name = cls["name"][:-10]
-            if cls_name not in builtin_classes:
-                res += f'#include "py4godot/cppclasses/{cls_name}/{cls_name}.h"\n'
-    return res
-
 
 def generate_classes(classes, filename, is_core=False):
     res = generate_import(classes[0], is_core)
     res = generate_newline(res)
 
-    res += generate_typed_array_import(classes)
     res += generate_header_statements()
     res = generate_newline(res)
     for class_ in classes:
@@ -2802,7 +2790,7 @@ def collect_typed_arrays(classes):
 def generate_typed_array_name(name):
     if (name == "typedarray::Array"):
         pass
-    return name.split("::")[1] + "TypedArray"
+    return "Array"
 
 def generate_sizes(obj):
     res = {}
@@ -2849,8 +2837,4 @@ if __name__ == "__main__":
             if (not os.path.exists(f"py4godot/cppclasses/{class_['name']}/")):
                 os.mkdir(f"py4godot/cppclasses/{class_['name']}/")
             generate_classes([class_], f"py4godot/cppclasses/{class_['name']}/{class_['name']}.cpp")
-        if not os.path.exists(f"py4godot/cppclasses/typedarrays/"):
-            os.mkdir(f"py4godot/cppclasses/typedarrays/")
-        for array in arrays:
-            generate_classes([array], f"py4godot/cppclasses/typedarrays/{array['name']}.cpp", is_core=True)
         generate_classes(obj["builtin_classes"], f"py4godot/cppclasses/generated4_core.cpp", is_core=True)

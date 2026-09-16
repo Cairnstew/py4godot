@@ -82,23 +82,6 @@ def generate_typed_array_name(name):
 def generate_newline(str_):
     return str_ + "\n"
 
-def generate_includes(classes):
-    res = ""
-    res += '#include "Python.h"'
-    res = generate_newline(res)
-    res += '#include "py4godot/cppclasses/generated4_core.h"'
-    res = generate_newline(res)
-    for cls in classes:
-        if "typedarray" in cls.lower():
-            res += f'#include "py4godot/cppclasses/typedarrays/{cls}.h"\n'
-        elif cls in builtin_classes:
-            continue
-        else:
-            res += f'#include "py4godot/cppclasses/{cls}/{cls}.h"'
-
-        res = generate_newline(res)
-    return res
-
 def generate_call_static_methods():
     res = ""
     res += f"PyObject* call_static_method(int class_id, int hash, PyObject* args){{"
