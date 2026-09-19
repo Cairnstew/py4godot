@@ -1,0 +1,42 @@
+{
+  "include": [
+    "py4godot/**/*.pyi",
+    "py4godot/**/*.py"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    "**/*.pyc",
+    "**/build",
+    "**/dist"
+  ],
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
+  "reportMissingTypeStubs": false,
+  "reportUnknownMemberType": "warning",
+  "reportUnknownParameterType": "warning",
+  "reportUnknownVariableType": "warning",
+  "reportUnknownArgumentType": "warning",
+  "reportUnknownLambdaType": "warning",
+  "reportUnknownBaseClass": "warning",
+  "reportUnknownDecoratorType": "warning",
+  "reportUnknownUnionType": "warning",
+  "reportPrivateUsage": "warning",
+  "reportUntypedBaseClass": "warning",
+  "reportUntypedFunctionDecorator": "warning",
+  "reportUntypedClassDecorator": "warning",
+  "reportUntypedNamedTuple": "warning",
+  "reportPrivateImportUsage": "warning",
+  "reportGeneralClassIssues": "warning",
+  "reportMissingImports": "warning",
+  "reportFunctionMemberAccess": "warning",
+  "reportImportCycles": "warning",
+  "reportUnnecessaryIsInstance": "warning",
+  "reportUnnecessaryCast": "warning",
+  "reportUnnecessaryComparison": "warning",
+  "reportUnnecessaryContains": "warning",
+  "reportUnnecessaryLambda": "warning",
+  "reportUnusedExpression": "warning",
+  "reportUnusedVariable": "warning",
+  "reportShadowedVariables": "warning"
+}

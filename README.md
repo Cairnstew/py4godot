@@ -111,6 +111,38 @@ Now, we just need to compile the project. The result of the compilation can be f
 ```console
 $ python build.py --target_platform=linux64 --compiler=gcc 
 ```
+## Type Stubs
+
+py4godot ships auto-generated type stubs (`.pyi` files) for full IDE autocompletion
+and static type checking. Stubs are generated from Godot's `extension_api.json` and
+cover all engine classes, built-in types, utility functions, constants, and enums.
+
+### Quick start
+
+```bash
+# Generate stubs + install so your IDE picks them up
+./stubs.sh install
+```
+
+### Available commands
+
+| Command | Description |
+|---|---|
+| `./stubs.sh generate` | Generate `.pyi` stubs from `extension_api.json` |
+| `./stubs.sh sync` | Copy generated stubs into `py4godot-stubs/` for distribution |
+| `./stubs.sh install` | Generate + sync + pip install in one step |
+| `./stubs.sh clean` | Remove all generated `.pyi` files |
+| `./stubs.sh validate` | Type-check stubs with pyright |
+| `./stubs.sh status` | Show stub file counts and timestamps |
+
+### Editor setup
+
+- **VS Code / Cursor (Pylance)** -- after `./stubs.sh install`, types are auto-detected. If not, add `"py4godot"` to `python.analysis.extraPaths` in your settings.
+- **PyCharm** -- auto-detected when the stubs package is installed.
+- **Vim / Neovim** -- add `"extraPaths": ["./py4godot"]` to `pyrightconfig.json`, or install the stubs package.
+
+For full documentation, see [py4godot-stubs/README.md](py4godot-stubs/README.md).
+
 ## Example Code
 Here you can see a basic example of how this project can be used. 
 Please note, that the classname you define under `@gdclass` must match the filename
